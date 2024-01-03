@@ -1,12 +1,14 @@
 from pytube import YouTube as YT
 from pytube import Search
-from pytube import Playlist
 import os
 import requests
 import logging
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
+from model.Muisc import Music
 import io
+from dotenv import load_dotenv
+
 
 
 class Result:
@@ -24,6 +26,11 @@ class Result:
 
 
 class YouTube:
+    def __init__(self) -> None:
+        load_dotenv()
+        
+        self.api_key = os.environ["API_KEY"]
+        
     def setContent(self, music: Result):
         self.title = music.title
         self.thumb = music.thumb
@@ -89,27 +96,37 @@ class YouTube:
         except Exception as e:
             print(f"Erro ao realizar a pesquisa: {e}")
 
-    def playlist(self, url: str) -> list[Result] | None:
-        playlist = Playlist(url)
-        results: list[Result] = []
+    def extract_playlist_id(self,url:str):
+        if "list=" in url:
+            return url.split("list=")[1]
+        return None
 
-        try:
-            for result in playlist.videos:
-                if (
-                    result.author != ""
-                    and result.title != ""
-                    and result.watch_url != ""
-                    and result.thumbnail_url != ""
-                ):
-                    results.append(
-                        Result(
-                            result.title,
-                            result.thumbnail_url,
-                            result.watch_url,
-                            result.author,
-                        )
-                    )
+    def get_videos(self, playlist_id:str) -> list[Music]:
+        base_url = "https://www.googleapis.com/youtube/v3/playlistItems"
+        id = self.extract_playlist_id(playlist_id)
+        params = {
+            "part": "snippet",
+            "maxResults": 25,
+            "playlistId":   id,
+            "key": self.api_key,
+        }
+        response = requests.get(base_url, params=params)
+        results = response.json()
 
-            return results
-        except Exception as e:
-            print(f"Erro ao realizar a pesquisa: {e}")
+        videos: list[Music] = []
+        
+        for item in results["items"]:
+            video_title = item["snippet"]["title"]
+            video_thumb = item["snippet"]["thumbnails"]["default"]["url"]
+            video_url = f"https://www.youtube.com/watch?v={item["snippet"]["resourceId"]["videoId"]}"
+            video_author = item["snippet"]["videoOwnerChannelTitle"]
+            music = Music(
+                    0,
+                    f"{video_title}",
+                    video_thumb,
+                    video_url,
+                    video_author
+                )
+            videos.append(music)
+            
+        return videos

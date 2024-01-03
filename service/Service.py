@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, abort
 from YouTube.YouTube import YouTube
 from flask.helpers import send_file
 import io
+from model.Playlist import Playlist
 from service.Database import Database
 
 
@@ -38,25 +39,45 @@ class Service:
                     "Parâmetro 'link' não fornecido na string de consulta."
                 )
 
-            find_first = self.database.find_first(link)
+            find_first: Playlist | None = self.database.find_first(link)
 
             if find_first is None:
                 playlist = self.database.create_playlist(link)
-                search_results = self.yt_instance.playlist(url=link)
-                for element in search_results:
+
+                musics = YouTube().get_videos(link)
+
+                for element in musics:
                     self.database.create_music(
                         element.title,
                         element.thumb,
                         element.author,
-                        element.url,
-                        playlist,
+                        link,
+                        playlist.id,
                     )
-                find_first = self.database.find_first(link)
-                return jsonify(find_first)
 
-            return jsonify(find_first)
+                find_first: Playlist | None = self.database.find_first(link)
+
+                return jsonify(find_first.to_dict())
+
+            if len(find_first.musics) == 0:
+                musics = YouTube().get_videos(link)
+
+                for element in musics:
+                    self.database.create_music(
+                        thumb=element.thumb,
+                        author=element.author,
+                        url=element.url,
+                        playlist_id=find_first.id,
+                        title=f"{element.title}",
+                    )
+
+                res = self.database.find_first(link).to_dict()
+
+                return jsonify(res)
+
+            return jsonify(find_first.to_dict())
         except Exception as e:
-            print(e)
+            raise e
             return jsonify({"error": "Erro durante a manipulação da playlist"}), 400
 
     def search(self, query: str | None):

@@ -1,6 +1,8 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+from model.Playlist import Playlist
+from model.Muisc import Music
 
 
 class Database:
@@ -55,20 +57,16 @@ class Database:
         try:
             # Verifica se a playlist já existe
             existing_playlist = self.find_first(link)
+
             if existing_playlist:
-                print("Playlist já existe.")
-                return existing_playlist[0]  # Retorna o ID da playlist existente
+                return existing_playlist  # Retorna o ID da playlist existente
 
             # Insere a nova playlist
             sql = "INSERT INTO playlist (link) VALUES (%s) RETURNING id;"
-            playlist = self.cur.execute(sql, (link,))
-            print(f"playlist: {playlist}")
-            playlist_id = self.cur.fetchone()[0]
+            self.cur.execute(sql, (link,))
             self.conn.commit()
-            print(playlist_id)
 
-            print(f"Playlist criada com sucesso! ID: {playlist_id}")
-            return playlist_id
+            return self.find_first(link)
         except Exception as error:
             print(error)
 
@@ -88,28 +86,22 @@ class Database:
             if not playlist_data:
                 return None
 
-            playlist_info = {
-                "id": playlist_data[0][0],
-                "link": playlist_data[0][1],
-                "musics": [],
-            }
+            playlist_info = Playlist(playlist_data[0][0], playlist_data[0][1], [])
 
             for row in playlist_data:
                 if row[2]:  # Se há dados de música
-                    music_info = {
-                        "id": row[2],
-                        "title": row[3],
-                        "thumb": row[4],
-                        "author": row[5],
-                        "url": row[6],
-                    }
-                    playlist_info["musics"].append(music_info)
+                    id = row[2]
+                    title = row[3]
+                    thumb = row[4]
+                    url = row[6]
+                    author = row[5]
+                    music_info = Music(id, title, thumb, url, author)
+                    playlist_info.musics.append(music_info)
 
             return playlist_info
 
         except Exception as error:
-            print(error)
-            return None
+            raise error
         finally:
             # Não é necessário chamar __init__ aqui, pois a conexão já foi estabelecida no __init__
             pass
@@ -137,7 +129,6 @@ class Database:
 
             self.conn.commit()
 
-            print(f"Música criada com sucesso! ID: {music_id}")
             return music_id
         except Exception as error:
             print(error)
