@@ -51,7 +51,7 @@ class Service:
                         element.title,
                         element.thumb,
                         element.author,
-                        link,
+                        element.url,
                         playlist.id,
                     )
 
@@ -68,7 +68,7 @@ class Service:
                         author=element.author,
                         url=element.url,
                         playlist_id=find_first.id,
-                        title=f"{element.title}",
+                        title=element.title,
                     )
 
                 res = self.database.find_first(link).to_dict()

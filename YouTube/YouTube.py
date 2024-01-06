@@ -8,7 +8,7 @@ from PIL import Image
 from model.Muisc import Music
 import io
 from dotenv import load_dotenv
-
+import json
 
 
 class Result:
@@ -28,22 +28,29 @@ class Result:
 class YouTube:
     def __init__(self) -> None:
         load_dotenv()
-        
+
         self.api_key = os.environ["API_KEY"]
-        
+
     def setContent(self, music: Result):
         self.title = music.title
         self.thumb = music.thumb
         self.url = music.url
         self.author = music.author
 
-    def download(self, url: str):
+    def download(self, id: str):
         try:
-            yt = YT(url)
+            yt = YT(f"https://music.youtube.com/watch?v={id}")
             video = yt.streams.filter(only_audio=True).first()
-            self.setContent(Result(yt.title, yt.thumbnail_url, url, yt.author))
+            self.setContent(
+                Result(
+                    yt.title,
+                    yt.thumbnail_url,
+                    yt.video_id,
+                    yt.author,
+                )
+            )
             downloaded_file = video.download("cache")
-
+            print(downloaded_file)
             path = f"./cache/{yt.title}.mp4"
 
             response = requests.get(yt.thumbnail_url)
@@ -65,6 +72,7 @@ class YouTube:
             # Adicionando metatag de artista
             mp4["\xa9ART"] = yt.author
             mp4["\xa9alb"] = yt.thumbnail_url
+            print(yt.title)
             mp4["\xa9nam"] = yt.title
             # Salvando as alterações
             mp4.save()
@@ -77,56 +85,71 @@ class YouTube:
             logging.error(f"Error while downloading the video: {e}")
             return None
 
-    def search(self, query: str) -> list[Result] | None:
-        results: list[Result] = []
+    def search(self, query: str) -> list[Result]:
         try:
-            search_results = Search(query).results
-            for result in search_results:
-                results.append(
-                    Result(
-                        result.title,
-                        result.thumbnail_url,
-                        result.watch_url,
-                        result.author,
-                    )
-                )
+            base_url = "https://www.googleapis.com/youtube/v3/search"
+            params = {
+                "part": "snippet",
+                "maxResults": 25,
+                "key": self.api_key,
+                "q": query,
+            }
+            response = requests.get(base_url, params=params)
+            results = response.json()
 
-            return results
-
+            if "items" in results:
+                videos: list[Result] = []
+                for item in results.get("items", []):
+                    if "id" in item and "videoId" in item["id"]:
+                        video_title = item.get("snippet", {}).get("title")
+                        video_thumb = (
+                            item.get("snippet", {})
+                            .get("thumbnails", {})
+                            .get("high", {})
+                            .get("url")
+                        )
+                        video_url = item["id"]["videoId"]
+                        video_author = item.get("snippet", {}).get("channelTitle")
+                        video = Result(
+                            video_title, video_thumb, video_url, video_author
+                        )
+                        videos.append(video)
+                    else:
+                        logging.warning(f"Skipping non-video item: {item}")
+                return videos
+            else:
+                logging.error(f"No 'items' key in API response: {results}")
+                return []
+        except requests.RequestException as e:
+            logging.error(f"Request to YouTube API failed: {e}")
+            return []
         except Exception as e:
-            print(f"Erro ao realizar a pesquisa: {e}")
+            logging.error(f"An unexpected error occurred: {e}")
+            return []
 
-    def extract_playlist_id(self,url:str):
-        if "list=" in url:
-            return url.split("list=")[1]
-        return None
+    def get_videos(self, playlist_id: str) -> list[Music]:
+        try:
+            base_url = "https://www.googleapis.com/youtube/v3/playlistItems"
+            params = {
+                "part": "snippet",
+                "maxResults": 25,
+                "playlistId": playlist_id,
+                "key": self.api_key,
+            }
+            response = requests.get(base_url, params=params)
+            results = response.json()
 
-    def get_videos(self, playlist_id:str) -> list[Music]:
-        base_url = "https://www.googleapis.com/youtube/v3/playlistItems"
-        id = self.extract_playlist_id(playlist_id)
-        params = {
-            "part": "snippet",
-            "maxResults": 25,
-            "playlistId":   id,
-            "key": self.api_key,
-        }
-        response = requests.get(base_url, params=params)
-        results = response.json()
+            videos: list[Music] = []
 
-        videos: list[Music] = []
-        
-        for item in results["items"]:
-            video_title = item["snippet"]["title"]
-            video_thumb = item["snippet"]["thumbnails"]["default"]["url"]
-            video_url = f"https://www.youtube.com/watch?v={item["snippet"]["resourceId"]["videoId"]}"
-            video_author = item["snippet"]["videoOwnerChannelTitle"]
-            music = Music(
-                    0,
-                    f"{video_title}",
-                    video_thumb,
-                    video_url,
-                    video_author
-                )
-            videos.append(music)
-            
-        return videos
+            for item in results["items"]:
+                video_title = item["snippet"]["title"]
+                video_thumb = item["snippet"]["thumbnails"].get("high", {}).get("url")
+                video_url = item.get("snippet").get("resourceId").get("videoId")
+                video_author = item["snippet"]["videoOwnerChannelTitle"]
+                music = Music(0, video_title, video_thumb, video_url, video_author)
+                videos.append(music)
+
+            return videos
+        except Exception as e:
+            logging.error(f"Error while downloading the video: {e}")
+            return None
