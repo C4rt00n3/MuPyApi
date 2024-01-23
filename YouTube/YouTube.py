@@ -38,6 +38,7 @@ class YouTube:
         self.author = music.author
 
     def download(self, id: str):
+        path = ""
         try:
             yt = YT(f"https://music.youtube.com/watch?v={id}")
             video = yt.streams.filter(only_audio=True).first()
@@ -50,8 +51,7 @@ class YouTube:
                 )
             )
             downloaded_file = video.download("cache")
-            print(downloaded_file)
-            path = f"./cache/{yt.title}.mp4"
+            path = downloaded_file
 
             response = requests.get(yt.thumbnail_url)
 
@@ -71,9 +71,9 @@ class YouTube:
 
             # Adicionando metatag de artista
             mp4["\xa9ART"] = yt.author
-            mp4["\xa9alb"] = yt.thumbnail_url
-            print(yt.title)
+            mp4["\xa9alb"] = f"thumbnail_url = {yt.thumbnail_url}, url = {id}"
             mp4["\xa9nam"] = yt.title
+            mp4["\xa9des"] = id
             # Salvando as alterações
             mp4.save()
 
@@ -84,6 +84,8 @@ class YouTube:
         except Exception as e:
             logging.error(f"Error while downloading the video: {e}")
             return None
+        finally:
+            os.remove(path)
 
     def search(self, query: str) -> list[Result]:
         try:

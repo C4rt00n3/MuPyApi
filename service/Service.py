@@ -10,14 +10,14 @@ class Service:
     yt_instance = YouTube()
     database = Database()
 
-    def download_file(self, link: str | None):
+    def download_file(self, id: str | None):
         try:
-            if link is None:
+            if id is None:
                 raise ValueError(
                     "Parâmetro 'link' não fornecido na string de consulta."
                 )
 
-            yt_bytes = self.yt_instance.download(url=link)
+            yt_bytes = self.yt_instance.download(id=id)
 
             # Criando um objeto BytesIO para servir o arquivo
             yt_file = io.BytesIO(yt_bytes)
