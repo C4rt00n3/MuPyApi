@@ -3,12 +3,10 @@ from YouTube.YouTube import YouTube
 from flask.helpers import send_file
 import io
 from model.Playlist import Playlist
-from service.Database import Database
 
 
 class Service:
     yt_instance = YouTube()
-    database = Database()
 
     def download_file(self, id: str | None):
         try:
