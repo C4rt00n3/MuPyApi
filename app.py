@@ -1,8 +1,5 @@
-from flask import Flask, jsonify, request, abort
-from YouTube.YouTube import YouTube
+from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask.helpers import send_file
-import io
 from flask_cors import CORS
 from service.Service import Service
 
