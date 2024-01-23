@@ -1,5 +1,4 @@
 from pytube import YouTube as YT
-from pytube import Search
 import os
 import requests
 import logging
@@ -8,7 +7,6 @@ from PIL import Image
 from model.Muisc import Music
 import io
 from dotenv import load_dotenv
-import json
 
 
 class Result:

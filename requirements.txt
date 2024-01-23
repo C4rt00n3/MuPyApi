@@ -7,8 +7,6 @@ cffi==1.16.0
 click==8.1.7
 colorama==0.4.6
 cymem==2.0.8
-Django==4.2.7
-djangorestframework==3.14.0
 Flask==3.0.0
 h11==0.14.0
 idna==3.4
