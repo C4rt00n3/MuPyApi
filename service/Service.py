@@ -1,12 +1,12 @@
-from flask import Flask, jsonify, request, abort
-from YouTube.YouTube import YouTube
+from flask import jsonify, abort
+from youtube import YouTube
 from flask.helpers import send_file
 import io
-from model.Playlist import Playlist
+from model.playlist import Playlist
 
 
 class Service:
-    yt_instance = YouTube()
+    yt_instance = YouTube.YouTube()
 
     def download_file(self, id: str | None):
         try:

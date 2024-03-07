@@ -1,7 +1,7 @@
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS
-from service.Service import Service
+from service.service import Service
 
 app = Flask(__name__)
 CORS(app)

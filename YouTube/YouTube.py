@@ -4,7 +4,7 @@ import requests
 import logging
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
-from model.Muisc import Music
+from model.music import Music
 import io
 from dotenv import load_dotenv
 
@@ -51,21 +51,21 @@ class YouTube:
             downloaded_file = video.download("cache")
             path = downloaded_file
 
-            response = requests.get(yt.thumbnail_url)
+            # response = requests.get(yt.thumbnail_url)
 
             # Abrindo a imagem usando a biblioteca PIL
-            image = Image.open(io.BytesIO(response.content))
+            # image = Image.open(io.BytesIO(response.content))
 
             # Convertendo a imagem para o formato .jpg
-            byte_arr = io.BytesIO()
-            image.save(byte_arr, format="JPEG")
+            # byte_arr = io.BytesIO()
+            # image.save(byte_arr, format="JPEG")
 
             # Criando um objeto MP4Cover com a imagem
-            mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
+            # mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
 
             # Adicionando a imagem ao arquivo .mp4
             mp4 = MP4(path)
-            mp4["covr"] = [mp4_cover]
+            # mp4["covr"] = [mp4_cover]
 
             # Adicionando metatag de artista
             mp4["\xa9ART"] = yt.author
@@ -83,7 +83,8 @@ class YouTube:
             logging.error(f"Error while downloading the video: {e}")
             return None
         finally:
-            os.remove(path)
+            if path != "":
+                os.remove(path)
 
     def search(self, query: str) -> list[Result]:
         try:
