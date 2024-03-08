@@ -10,7 +10,13 @@ from dotenv import load_dotenv
 
 
 class Result:
-    def __init__(self, title: str, thumb: str, url: str, author: str):
+    def __init__(
+        self,
+        title: str,
+        thumb: str,
+        url: str,
+        author: str,
+    ):
         self.title = title
         self.thumb = thumb
         self.url = url
@@ -36,7 +42,7 @@ class YouTube:
         self.author = music.author
 
     def download(self, id: str):
-        path = ""
+        path = "../cache"
         try:
             yt = YT(f"https://music.youtube.com/watch?v={id}")
             video = yt.streams.filter(only_audio=True).first()
@@ -85,7 +91,12 @@ class YouTube:
         finally:
             os.remove(path)
 
-    def search(self, query: str) -> list[Result]:
+    def stream(self, id: str):
+        yt = YT(f"https://music.youtube.com/watch?v={id}")
+        audio = yt.streams.filter(only_audio=True).first()
+        return {"result": audio.url}
+
+    def search(self, query: str):
         try:
             base_url = "https://www.googleapis.com/youtube/v3/search"
             params = {
@@ -111,7 +122,10 @@ class YouTube:
                         video_url = item["id"]["videoId"]
                         video_author = item.get("snippet", {}).get("channelTitle")
                         video = Result(
-                            video_title, video_thumb, video_url, video_author
+                            video_title,
+                            video_thumb,
+                            video_url,
+                            video_author,
                         )
                         videos.append(video)
                     else:

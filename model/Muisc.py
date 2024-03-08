@@ -17,4 +17,5 @@ class Music:
             "thumb": self.thumb,
             "url": self.url,
             "author": self.author,
+            # "stream": self.stream,
         }

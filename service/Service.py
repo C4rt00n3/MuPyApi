@@ -8,6 +8,9 @@ from model.Playlist import Playlist
 class Service:
     yt_instance = YouTube()
 
+    def stream(self, id: str):
+        return self.yt_instance.stream(id)
+
     def download_file(self, id: str | None):
         try:
             if id is None:
@@ -37,45 +40,14 @@ class Service:
                     "Parâmetro 'link' não fornecido na string de consulta."
                 )
 
-            find_first: Playlist | None = self.database.find_first(link)
+            musics = YouTube().get_videos(link)
+            print(musics)
+            playlist = Playlist(0, link, musics)
+            print(playlist)
 
-            if find_first is None:
-                playlist = self.database.create_playlist(link)
+            return jsonify(playlist.to_dict())
 
-                musics = YouTube().get_videos(link)
-
-                for element in musics:
-                    self.database.create_music(
-                        element.title,
-                        element.thumb,
-                        element.author,
-                        element.url,
-                        playlist.id,
-                    )
-
-                find_first: Playlist | None = self.database.find_first(link)
-
-                return jsonify(find_first.to_dict())
-
-            if len(find_first.musics) == 0:
-                musics = YouTube().get_videos(link)
-
-                for element in musics:
-                    self.database.create_music(
-                        thumb=element.thumb,
-                        author=element.author,
-                        url=element.url,
-                        playlist_id=find_first.id,
-                        title=element.title,
-                    )
-
-                res = self.database.find_first(link).to_dict()
-
-                return jsonify(res)
-
-            return jsonify(find_first.to_dict())
         except Exception as e:
-            raise e
             return jsonify({"error": "Erro durante a manipulação da playlist"}), 400
 
     def search(self, query: str | None):
