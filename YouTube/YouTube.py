@@ -7,6 +7,7 @@ from PIL import Image
 from model.music import Music
 import io
 from dotenv import load_dotenv
+import random
 
 
 class Result:
@@ -51,21 +52,21 @@ class YouTube:
             downloaded_file = video.download("cache")
             path = downloaded_file
 
-            # response = requests.get(yt.thumbnail_url)
+            response = requests.get(yt.thumbnail_url)
 
             # Abrindo a imagem usando a biblioteca PIL
-            # image = Image.open(io.BytesIO(response.content))
+            image = Image.open(io.BytesIO(response.content))
 
             # Convertendo a imagem para o formato .jpg
-            # byte_arr = io.BytesIO()
-            # image.save(byte_arr, format="JPEG")
+            byte_arr = io.BytesIO()
+            image.save(byte_arr, format="JPEG")
 
             # Criando um objeto MP4Cover com a imagem
-            # mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
+            mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
 
             # Adicionando a imagem ao arquivo .mp4
             mp4 = MP4(path)
-            # mp4["covr"] = [mp4_cover]
+            mp4["covr"] = [mp4_cover]
 
             # Adicionando metatag de artista
             mp4["\xa9ART"] = yt.author
@@ -141,13 +142,17 @@ class YouTube:
             results = response.json()
 
             videos: list[Music] = []
-
             for item in results["items"]:
                 video_title = item["snippet"]["title"]
                 video_thumb = item["snippet"]["thumbnails"].get("high", {}).get("url")
                 video_url = item.get("snippet").get("resourceId").get("videoId")
                 video_author = item["snippet"]["videoOwnerChannelTitle"]
-                music = Music(0, video_title, video_thumb, video_url, video_author)
+                music = Music(
+                    video_title,
+                    video_thumb,
+                    video_url,
+                    video_author,
+                )
                 videos.append(music)
 
             return videos

@@ -1,6 +1,5 @@
 class Music:
-    def __init__(self, id: int, title: str, thumb: str, url: str, author: str):
-        self.id = id
+    def __init__(self, title: str, thumb: str, url: str, author: str):
         self.title = title
         self.thumb = thumb
         self.url = url
@@ -12,7 +11,6 @@ class Music:
 
     def to_dict(self):
         return {
-            "id": self.id,
             "title": self.title,
             "thumb": self.thumb,
             "url": self.url,
