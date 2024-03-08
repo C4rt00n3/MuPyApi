@@ -1,12 +1,12 @@
 from flask import jsonify, abort
-from youtube import YouTube
+from youtube.YouTube import YouTube
 from flask.helpers import send_file
 import io
 from model.playlist import Playlist
 
 
 class Service:
-    yt_instance = YouTube.YouTube()
+    yt_instance = YouTube()
 
     def download_file(self, id: str | None):
         try:
@@ -26,6 +26,22 @@ class Service:
                 download_name=f"{self.yt_instance.title}.mp4",
                 as_attachment=True,
             )
+        except Exception as e:
+            print(e)
+            abort(400)
+
+    def search(self, query: str | None):
+        try:
+            if query is None:
+                raise ValueError(
+                    "Parâmetro 'query' não fornecido na string de consulta."
+                )
+
+            search_results = self.yt_instance.search(query=query)
+
+            results_dict_list = [result.__dict__ for result in search_results]
+
+            return jsonify({"results": results_dict_list})
         except Exception as e:
             print(e)
             abort(400)
@@ -77,19 +93,3 @@ class Service:
         except Exception as e:
             raise e
             return jsonify({"error": "Erro durante a manipulação da playlist"}), 400
-
-    def search(self, query: str | None):
-        try:
-            if query is None:
-                raise ValueError(
-                    "Parâmetro 'query' não fornecido na string de consulta."
-                )
-
-            search_results = self.yt_instance.search(query=query)
-
-            results_dict_list = [result.__dict__ for result in search_results]
-
-            return jsonify({"results": results_dict_list})
-        except Exception as e:
-            print(e)
-            abort(400)
