@@ -13,7 +13,7 @@ def __init__() -> None:
     app.run(debug=True)
 
 
-@app.route("/download", methods=["GET"])
+@app.route("/download", methods=["GET", "POST"])
 def download_req():
     link = request.args.get("link")
     return service.download_file(link)
