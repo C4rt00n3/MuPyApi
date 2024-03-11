@@ -3,7 +3,7 @@
   "builds": [
     {
       "use": "@vercel/python",
-      "src": "inde.py",
+      "src": "index.py",
       "config": {
         "includeFiles": ["*.py"]
       }
