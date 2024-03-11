@@ -85,7 +85,7 @@ class Service:
 
             search_results = self.yt_instance.stream(id=link)
 
-            return jsonify({"link": search_results})
+            return jsonify({"result": search_results})
         except Exception as e:
             print(e)
             abort(400)
