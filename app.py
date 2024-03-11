@@ -36,6 +36,11 @@ def get_playlist():
     query = request.args.get("query")
     return service.get_playlist(query)
 
+@app.route("/stream", methods=["GET"])
+def stream_req():
+    link = request.args.get("link")
+    return service.stream(link)
+
 
 if __name__ == "__main__":
     __init__()
