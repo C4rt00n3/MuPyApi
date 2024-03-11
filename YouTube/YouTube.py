@@ -7,6 +7,7 @@ from PIL import Image
 from model.music import Music
 import io
 from dotenv import load_dotenv
+import random
 
 
 class Result:
@@ -51,21 +52,21 @@ class YouTube:
             downloaded_file = video.download("cache")
             path = downloaded_file
 
-            # response = requests.get(yt.thumbnail_url)
+            response = requests.get(yt.thumbnail_url)
 
             # Abrindo a imagem usando a biblioteca PIL
-            # image = Image.open(io.BytesIO(response.content))
+            image = Image.open(io.BytesIO(response.content))
 
             # Convertendo a imagem para o formato .jpg
-            # byte_arr = io.BytesIO()
-            # image.save(byte_arr, format="JPEG")
+            byte_arr = io.BytesIO()
+            image.save(byte_arr, format="JPEG")
 
             # Criando um objeto MP4Cover com a imagem
-            # mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
+            mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
 
             # Adicionando a imagem ao arquivo .mp4
             mp4 = MP4(path)
-            # mp4["covr"] = [mp4_cover]
+            mp4["covr"] = [mp4_cover]
 
             # Adicionando metatag de artista
             mp4["\xa9ART"] = yt.author
@@ -141,16 +142,68 @@ class YouTube:
             results = response.json()
 
             videos: list[Music] = []
-
             for item in results["items"]:
                 video_title = item["snippet"]["title"]
                 video_thumb = item["snippet"]["thumbnails"].get("high", {}).get("url")
                 video_url = item.get("snippet").get("resourceId").get("videoId")
                 video_author = item["snippet"]["videoOwnerChannelTitle"]
-                music = Music(0, video_title, video_thumb, video_url, video_author)
+                music = Music(
+                    video_title,
+                    video_thumb,
+                    video_url,
+                    video_author,
+                )
                 videos.append(music)
 
             return videos
         except Exception as e:
             logging.error(f"Error while downloading the video: {e}")
             return None
+
+    def get_playlist(self, query: str) -> list[Result]:
+        try:
+            base_url = "https://www.googleapis.com/youtube/v3/search"
+            params = {
+                "part": "snippet",
+                "maxResults": 25,
+                "key": self.api_key,
+                "type": "playlist",
+                "q": query,
+            }
+            response = requests.get(base_url, params=params)
+            results = response.json()
+
+            if "items" in results:
+                videos: list[Result] = []
+                for item in results.get("items", []):
+                    if "id" in item and "playlistId" in item["id"]:
+                        video_title = item.get("snippet", {}).get("title")
+                        video_thumb = (
+                            item.get("snippet", {})
+                            .get("thumbnails", {})
+                            .get("high", {})
+                            .get("url")
+                        )
+                        video_url = item["id"]["playlistId"]
+                        video_author = item.get("snippet", {}).get("channelTitle")
+                        video = Result(
+                            video_title, video_thumb, video_url, video_author
+                        )
+                        videos.append(video)
+                    else:
+                        logging.warning(f"Skipping non-video item: {item}")
+                return videos
+            else:
+                logging.error(f"No 'items' key in API response: {results}")
+                return []
+        except requests.RequestException as e:
+            logging.error(f"Request to YouTube API failed: {e}")
+            return []
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            return []
+        
+    def stream(self, id: str): 
+        yt = YT(f"https://music.youtube.com/watch?v={id}")
+        audio = yt.streams.filter(only_audio=True).first()
+        return audio.url

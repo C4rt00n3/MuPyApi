@@ -13,7 +13,7 @@ def __init__() -> None:
     app.run(debug=True)
 
 
-@app.route("/download", methods=["GET"])
+@app.route("/download", methods=["GET", "POST"])
 def download_req():
     link = request.args.get("link")
     return service.download_file(link)
@@ -29,6 +29,17 @@ def search_req():
 def playlist_req():
     link = request.args.get("link")
     return service.playlist(link)
+
+
+@app.route("/getPlaylist", methods=["GET"])
+def get_playlist():
+    query = request.args.get("query")
+    return service.get_playlist(query)
+
+@app.route("/stream", methods=["GET"])
+def stream_req():
+    link = request.args.get("link")
+    return service.stream(link)
 
 
 if __name__ == "__main__":
