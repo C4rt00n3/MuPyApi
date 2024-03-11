@@ -41,6 +41,9 @@ def stream_req():
     link = request.args.get("link")
     return service.stream(link)
 
+@app.route("/", methods=["GET"])
+def stream_req():
+    return "<h1>Sound Py</h1>"
 
 if __name__ == "__main__":
     __init__()
