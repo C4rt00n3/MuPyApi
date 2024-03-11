@@ -7,8 +7,6 @@ from PIL import Image
 from model.music import Music
 import io
 from dotenv import load_dotenv
-import random
-
 
 class Result:
     def __init__(self, title: str, thumb: str, url: str, author: str):

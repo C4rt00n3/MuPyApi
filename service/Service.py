@@ -2,7 +2,6 @@ from flask import jsonify, abort
 from youtube.YouTube import YouTube
 from flask.helpers import send_file
 import io
-from model.playlist import Playlist
 
 
 class Service:
