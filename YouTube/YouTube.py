@@ -159,3 +159,51 @@ class YouTube:
         except Exception as e:
             logging.error(f"Error while downloading the video: {e}")
             return None
+
+    def get_playlist(self, query: str) -> list[Result]:
+        try:
+            base_url = "https://www.googleapis.com/youtube/v3/search"
+            params = {
+                "part": "snippet",
+                "maxResults": 25,
+                "key": self.api_key,
+                "type": "playlist",
+                "q": query,
+            }
+            response = requests.get(base_url, params=params)
+            results = response.json()
+
+            if "items" in results:
+                videos: list[Result] = []
+                for item in results.get("items", []):
+                    if "id" in item and "playlistId" in item["id"]:
+                        video_title = item.get("snippet", {}).get("title")
+                        video_thumb = (
+                            item.get("snippet", {})
+                            .get("thumbnails", {})
+                            .get("high", {})
+                            .get("url")
+                        )
+                        video_url = item["id"]["playlistId"]
+                        video_author = item.get("snippet", {}).get("channelTitle")
+                        video = Result(
+                            video_title, video_thumb, video_url, video_author
+                        )
+                        videos.append(video)
+                    else:
+                        logging.warning(f"Skipping non-video item: {item}")
+                return videos
+            else:
+                logging.error(f"No 'items' key in API response: {results}")
+                return []
+        except requests.RequestException as e:
+            logging.error(f"Request to YouTube API failed: {e}")
+            return []
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            return []
+        
+    def stream(self, id: str): 
+        yt = YT(f"https://music.youtube.com/watch?v={id}")
+        audio = yt.streams.filter(only_audio=True).first()
+        return audio.url

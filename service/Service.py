@@ -61,3 +61,31 @@ class Service:
         except Exception as e:
             raise e
             return jsonify({"error": "Erro durante a manipulação da playlist"}), 400
+
+    def get_playlist(self, query: str | None):
+        try:
+            if query is None:
+                raise ValueError(
+                    "Parâmetro 'query' não fornecido na string de consulta."
+                )
+
+            search_results = self.yt_instance.get_playlist(query=query)
+
+            results_dict_list = [result.__dict__ for result in search_results]
+
+            return jsonify(results_dict_list)
+        except Exception as e:
+            print(e)
+            abort(400)
+
+    def stream(self, link: str):
+        try:
+            if link is None:
+                raise ValueError("Parâmetro 'id' não fornecido na string de consulta.")
+
+            search_results = self.yt_instance.stream(id=link)
+
+            return jsonify({"link": search_results})
+        except Exception as e:
+            print(e)
+            abort(400)

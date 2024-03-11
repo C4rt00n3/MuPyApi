@@ -31,5 +31,11 @@ def playlist_req():
     return service.playlist(link)
 
 
+@app.route("/getPlaylist", methods=["GET"])
+def get_playlist():
+    query = request.args.get("query")
+    return service.get_playlist(query)
+
+
 if __name__ == "__main__":
     __init__()
