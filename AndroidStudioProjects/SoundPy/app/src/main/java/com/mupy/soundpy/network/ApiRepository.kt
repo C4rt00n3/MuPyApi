@@ -26,6 +26,6 @@ class ApiRepository {
     }
 
     suspend fun stream(link: String): StreamYt {
-        return api.stream((link))
+        return api.stream(link)
     }
 }

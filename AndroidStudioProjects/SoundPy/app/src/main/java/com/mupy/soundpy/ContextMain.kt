@@ -371,13 +371,17 @@ class ContextMain(
     fun stream(music: Music) {
         viewModelScope.launch {
             try {
+                setMusic(music)
                 val res = repository.stream(music.url)
                 utils.getImg(music, context) {
                     music.bitImage = utils.compressBitmapToByteArray(it)
                     _soundPy.value?.stream(Uri.parse(res.result), music)
                 }
+                println(music)
             } catch (err: Exception) {
                 Log.d("Error", "$err")
+            } finally {
+                this.cancel()
             }
         }
     }

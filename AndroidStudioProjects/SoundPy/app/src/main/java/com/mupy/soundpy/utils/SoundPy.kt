@@ -207,18 +207,18 @@ class SoundPy(
     }
 
     fun stream(uri: Uri, music: Music) {
-        player.apply {
-            addMediaItem(addMediaItem(uri, music))
-            prepare()
-            seekTo(cache.size - 1, 0)
-            play()
-        }
+        val md = addMediaItem(uri, music)
+        cache.add(md)
+        player.addMediaItem(md)
+        player.prepare()
+        open(music)
+        player.play()
+        player.repeatMode = ExoPlayer.REPEAT_MODE_ALL
     }
 
     fun open(music: Music) {
         for (i in 0 until cache.size) {
             cache[i].mediaMetadata.apply {
-                println("${title.toString()} == ${music.title}")
                 if (title.toString() == music.title) {
                     player.seekTo(i, 0)
                     return
