@@ -1,8 +1,3 @@
-
-Para instalar dependências e rodar um script Python dentro do ambiente virtual .venv ao fazer o deploy no Vercel, você precisará adicionar essas etapas ao seu processo de build. Aqui está um exemplo de como você pode fazer isso no seu arquivo de configuração:
-
-json
-Copy code
 {
   "version": 2,
   "builds": [
