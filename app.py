@@ -10,7 +10,7 @@ service = Service()
 
 
 def __init__() -> None:
-    app.run(debug=True)
+    app.run(debug=False)
 
 
 @app.route("/download", methods=["GET", "POST"])
