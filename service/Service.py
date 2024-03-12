@@ -1,5 +1,5 @@
 from flask import jsonify, abort
-from youtube.YouTube import YouTube
+from YouTube.YouTube import YouTube
 from flask.helpers import send_file
 import io
 
