@@ -3,3 +3,5 @@ __pycache__/
 .vercel
 node_modules
 .venv
+package-lock.json
+package.json
