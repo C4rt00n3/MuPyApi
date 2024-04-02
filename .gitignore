@@ -2,6 +2,6 @@ __pycache__/
 *.pyc
 .vercel
 node_modules
-.venv
+venv
 package-lock.json
 package.json

@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Rafael\OneDrive\Área de Trabalho\Bihnads\MuPyApi\venv
+set VIRTUAL_ENV=C:\Users\rafae\OneDrive\Documentos\MyProjects\MuPyApi\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
