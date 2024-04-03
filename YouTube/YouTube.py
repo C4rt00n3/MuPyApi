@@ -5,6 +5,7 @@ import logging
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from model.music import Music
+from typing import List
 import io
 from dotenv import load_dotenv
 
@@ -85,7 +86,7 @@ class YouTube:
             if path != "":
                 os.remove(path)
 
-    def search(self, query: str) -> list[Result]:
+    def search(self, query: str) -> List[Result]:
         try:
             base_url = "https://www.googleapis.com/youtube/v3/search"
             params = {
@@ -98,7 +99,7 @@ class YouTube:
             results = response.json()
 
             if "items" in results:
-                videos: list[Result] = []
+                videos: List[Result] = []
                 for item in results.get("items", []):
                     if "id" in item and "videoId" in item["id"]:
                         video_title = item.get("snippet", {}).get("title")
@@ -127,7 +128,7 @@ class YouTube:
             logging.error(f"An unexpected error occurred: {e}")
             return []
 
-    def get_videos(self, playlist_id: str) -> list[Music]:
+    def get_videos(self, playlist_id: str) -> List[Music]:
         try:
             base_url = "https://www.googleapis.com/youtube/v3/playlistItems"
             params = {
@@ -139,7 +140,7 @@ class YouTube:
             response = requests.get(base_url, params=params)
             results = response.json()
 
-            videos: list[Music] = []
+            videos: List[Music] = []
             for item in results["items"]:
                 video_title = item["snippet"]["title"]
                 video_thumb = item["snippet"]["thumbnails"].get("high", {}).get("url")
@@ -158,7 +159,7 @@ class YouTube:
             logging.error(f"Error while downloading the video: {e}")
             return None
 
-    def get_playlist(self, query: str) -> list[Result]:
+    def get_playlist(self, query: str) -> List[Result]:
         try:
             base_url = "https://www.googleapis.com/youtube/v3/search"
             params = {
@@ -172,7 +173,7 @@ class YouTube:
             results = response.json()
 
             if "items" in results:
-                videos: list[Result] = []
+                videos: List[Result] = []
                 for item in results.get("items", []):
                     if "id" in item and "playlistId" in item["id"]:
                         video_title = item.get("snippet", {}).get("title")

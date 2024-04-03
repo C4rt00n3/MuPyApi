@@ -1,8 +1,8 @@
 from model.music import Music
-
+from typing import List
 
 class Playlist:
-    def __init__(self, id: int, link, musics: list[Music]):
+    def __init__(self, id: int, link, musics: List[Music]):
         self.id = id
         self.link = link
         self.musics = musics
