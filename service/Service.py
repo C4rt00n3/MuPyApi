@@ -12,7 +12,7 @@ class Service:
     def __init__(self):
         self.yt_instance = YouTube()
 
-    def download_file(self, id: Union[str, None]):
+    async def  download_file(self, id: Union[str, None]):
         """
         Faz o download de um vídeo do YouTube e retorna o arquivo para download.
 
@@ -42,7 +42,7 @@ class Service:
             print(e)
             abort(400)
 
-    def search(self, query: str):
+    async def search(self, query: str):
         """
         Realiza uma busca no YouTube com base em uma consulta e retorna os resultados.
 
@@ -67,7 +67,7 @@ class Service:
             print(e)
             abort(400)
 
-    def playlist(self, link: str):
+    async def playlist(self, link: str):
         """
         Retorna a lista de músicas de uma playlist do YouTube.
 
@@ -92,7 +92,7 @@ class Service:
             print(e)
             abort(400)
 
-    def get_playlist(self, query: str):
+    async def get_playlist(self, query: str):
         """
         Retorna a lista de playlists do YouTube com base em uma consulta.
 
@@ -117,7 +117,7 @@ class Service:
             print(e)
             abort(400)
 
-    def stream(self, link: str):
+    async def stream(self, link: str):
         """
         Retorna as informações de streaming de um vídeo do YouTube.
 

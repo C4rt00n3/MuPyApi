@@ -1,13 +1,15 @@
-from pytube import YouTube as YT
 import os
+import io
 import requests
 import logging
-from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
-from model.music import Music
 from typing import List
-import io
+from model.music import Music
 from dotenv import load_dotenv
+from pytube import YouTube as YT
+from mutagen.mp4 import MP4, MP4Cover
+from cachetools import cached, LRUCache 
+
 
 class Result:
     def __init__(self, title: str, thumb: str, url: str, author: str):
@@ -48,6 +50,7 @@ class YouTube:
         self.url = music.url
         self.author = music.author
 
+    @cached(cache = LRUCache(maxsize = 15))
     def download(self, id: str) -> bytes:
         """
         Baixa o áudio de um vídeo do YouTube e adiciona metadados ao arquivo MP4.
@@ -91,6 +94,7 @@ class YouTube:
             if path:
                 os.remove(path)
 
+    @cached(cache = LRUCache(maxsize = 100))
     def search(self, query: str) -> List[Result]:
         """
         Realiza uma busca por vídeos no YouTube com base em uma query.
@@ -134,7 +138,8 @@ class YouTube:
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
             return []
-
+    
+    @cached(cache = LRUCache(maxsize = 100))
     def get_videos(self, playlist_id: str) -> List[Music]:
         """
         Obtém os vídeos de uma playlist do YouTube.
@@ -170,6 +175,7 @@ class YouTube:
             logging.error(f"Error while downloading the video: {e}")
             return None
 
+    @cached(cache = LRUCache(maxsize = 15))
     def get_playlist(self, query: str) -> List[Result]:
         """
         Obtém playlists do YouTube com base em uma query.
@@ -214,7 +220,8 @@ class YouTube:
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
             return []
-
+    
+    @cached(cache = LRUCache(maxsize = 100))
     def stream(self, id: str) -> str:
         """
         Retorna a URL de streaming de áudio de um vídeo do YouTube.
