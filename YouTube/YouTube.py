@@ -108,11 +108,13 @@ class YouTube:
         try:
             base_url = "https://www.googleapis.com/youtube/v3/search"
             params = {
-                "part": "snippet",
-                "maxResults": 25,
-                "key": self.api_key,
-                "q": query,
-            }
+            "part": "snippet",
+            "maxResults": 25,
+            "key": self.api_key,
+            "q": query,
+            "type": "video",
+            "videoCategoryId": "10"  # ID da categoria de música
+        }
             response = requests.get(base_url, params=params)
             results = response.json()
 
