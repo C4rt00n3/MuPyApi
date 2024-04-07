@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 service = Service()
-semaphore = asyncio.Semaphore(100)  # Limita o número de requisições concorrentes a 10
+semaphore = asyncio.Semaphore(100)  # Limita o número de requisições concorrentes a 100
 
 async def processar_rota_coro(coroutine, *args, **kwargs):
     async with semaphore:
@@ -17,7 +17,7 @@ async def processar_rota_coro(coroutine, *args, **kwargs):
 @app.route("/download", methods=["GET", "POST"])
 async def download_req():
     link = request.args.get("link")
-    return await processar_rota_coro(service.download_file, link)
+    return  await processar_rota_coro(service.download_file, link)
 
 @app.route("/search", methods=["GET"])
 async def search_req():
@@ -44,4 +44,4 @@ def home():
     return "<h1>Sound Py</h1>"
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
