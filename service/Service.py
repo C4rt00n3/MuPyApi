@@ -4,6 +4,7 @@ from YouTube.YouTube import YouTube
 from flask.helpers import send_file
 from typing import Union
 
+
 class Service:
     """
     Classe que fornece serviços relacionados ao YouTube, como download de vídeos, busca e listagem de playlists.
@@ -12,7 +13,7 @@ class Service:
     def __init__(self):
         self.yt_instance = YouTube()
 
-    async def  download_file(self, id: Union[str, None]):
+    async def download_file(self, id: Union[str, None]):
         """
         Faz o download de um vídeo do YouTube e retorna o arquivo para download.
 
@@ -24,19 +25,15 @@ class Service:
         """
         try:
             if id is None:
-                raise ValueError(
-                    "Parâmetro 'id' não fornecido na string de consulta."
-                )
+                raise ValueError("Parâmetro 'id' não fornecido na string de consulta.")
 
-            yt_bytes = self.yt_instance.download(id=id)
-
-            yt_file = io.BytesIO(yt_bytes)
-            yt_file.seek(0)
+            video_bytes = self.yt_instance.download(video_id=id)
 
             return send_file(
-                yt_file,
-                download_name=f"{self.yt_instance.title}.mp4",
+                io.BytesIO(video_bytes),
+                mimetype="video/mp4",
                 as_attachment=True,
+                download_name=f"{id}.mp4"
             )
         except Exception as e:
             print(e)
@@ -66,6 +63,7 @@ class Service:
         except Exception as e:
             print(e)
             abort(400)
+        ...
 
     async def playlist(self, link: str):
         """

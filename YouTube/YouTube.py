@@ -1,14 +1,16 @@
-import os
 import io
+import re
+import os
 import requests
 import logging
 from PIL import Image
-from typing import List
+import yt_dlp as youtube_dl
 from model.music import Music
 from dotenv import load_dotenv
-from pytube import YouTube as YT
-from mutagen.mp4 import MP4, MP4Cover
-from cachetools import cached, LRUCache 
+from typing import List, Any, Dict
+from cachetools import cached, LRUCache
+from youtube_dl.utils import DownloadError
+from mutagen.id3 import ID3, TIT2, APIC, TPE1, TALB
 
 
 class Result:
@@ -24,13 +26,30 @@ class Result:
         )
         return "{\n" + content + "\n},"
 
+
 class YouTube:
     """
     Classe para interação com a API do YouTube.
-    
+
     Attributes:
         api_key (str): A chave de API do YouTube.
     """
+
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+            }
+        ],
+        'outtmpl': '%(id)s.%(ext)s',
+        "postprocessor_args": ["-ar", "16000"],
+        "prefer_ffmpeg": True,
+        "keepvideo": False,  # Não mantém o vídeo baixado
+        "ignoreerrors": True,  # Para ignorar erros durante a extração
+    }
+
     def __init__(self) -> None:
         """
         Inicializa a classe YouTube e carrega a chave de API do YouTube do ambiente.
@@ -50,51 +69,79 @@ class YouTube:
         self.url = music.url
         self.author = music.author
 
-    @cached(cache = LRUCache(maxsize = 15))
-    def download(self, id: str) -> bytes:
-        """
-        Baixa o áudio de um vídeo do YouTube e adiciona metadados ao arquivo MP4.
-
-        Args:
-            id (str): O ID do vídeo no YouTube.
-
-        Returns:
-            bytes: O conteúdo do áudio baixado.
-        """
-        path = ""
+    def extract_metadata_and_add_to_mp3(
+        self, metadata: Dict[str, Any], 
+    ):
         try:
-            yt = YT(f"https://music.youtube.com/watch?v={id}")
-            video = yt.streams.filter(only_audio=True).first()
-            self.set_content(Result(yt.title, yt.thumbnail_url, yt.video_id, yt.author))
-            downloaded_file = video.download("cache")
-            path = downloaded_file
+            mp3_filename = metadata.get("path")
+            thumbnail_url = metadata.get("thumb")
+            channel_name = metadata.get("channel")
+            video_id = metadata.get("id")
+            video_title = metadata.get("title")
 
-            response = requests.get(yt.thumbnail_url)
+            response = requests.get(thumbnail_url)
+            response.raise_for_status()
             image = Image.open(io.BytesIO(response.content))
+
+            # Save the image to a byte array
             byte_arr = io.BytesIO()
             image.save(byte_arr, format="JPEG")
-            mp4_cover = MP4Cover(byte_arr.getvalue(), imageformat=MP4Cover.FORMAT_JPEG)
+            image_data = byte_arr.getvalue()
 
-            mp4 = MP4(path)
-            mp4["covr"] = [mp4_cover]
-            mp4["\xa9ART"] = yt.author
-            mp4["\xa9alb"] = f"thumbnail_url = {yt.thumbnail_url}, url = {id}"
-            mp4["\xa9nam"] = yt.title
-            mp4["\xa9des"] = id
-            mp4.save()
+            # Lê os metadados existentes
+            tags = ID3(mp3_filename)
+            # Adicione titulo ao arquivo
+            tags.add(TIT2(encoding=3, text=video_title))
+            # Adiciona a imagem como arte de álbum
+            tags.add(
+                APIC(
+                    encoding=3, mime="image/jpeg", type=3, desc="Cover", data=image_data
+                )
+            )
+            # Adicona nome do artista
+            tags.add(TPE1(encoding=3, text=channel_name))
+            # Adiciona nome do album
+            tags.add(
+                TALB(
+                    encoding=3,
+                    text=f"thumbnail_url = {thumbnail_url}, url = {video_id}",
+                )
+            )
 
-            with open(path, "rb") as audio_file:
-                audio_content = audio_file.read()
+            # Salva as alterações
+            tags.save()
+            return mp3_filename
+        except (requests.exceptions.RequestException, IOError) as e:
+            raise RuntimeError(f"Failed to extract metadata and add to MP3: {e}")
 
-            return audio_content
-        except Exception as e:
-            logging.error(f"Error while downloading the video: {e}")
-            return None
-        finally:
-            if path:
-                os.remove(path)
+    @cached(cache=LRUCache(maxsize=15))
+    def download(self, video_id: str) -> bytes:
+        try:
+            with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
+                info = ydl.extract_info(
+                    f"https://www.youtube.com/watch?v={video_id}",
+                    download=True,
+                )
+                metadata = {
+                    "title": str(info["title"]),
+                    "thumb": info["thumbnails"][-1]["url"],
+                    "id": video_id,
+                    "channel": info["uploader"],
+                    "path": f"{video_id}.mp3"
+                }
 
-    @cached(cache = LRUCache(maxsize = 100))
+                mp3_path = self.extract_metadata_and_add_to_mp3(metadata)
+
+                with open(mp3_path, "rb") as content:
+                    mp3_content = content.read()
+
+                os.remove(mp3_path)
+
+                return mp3_content
+        except DownloadError as e:
+            raise RuntimeError(f"Failed to download audio: {e}")
+
+    @cached(cache=LRUCache(maxsize=100))
     def search(self, query: str) -> List[Result]:
         """
         Realiza uma busca por vídeos no YouTube com base em uma query.
@@ -108,13 +155,13 @@ class YouTube:
         try:
             base_url = "https://www.googleapis.com/youtube/v3/search"
             params = {
-            "part": "snippet",
-            "maxResults": 25,
-            "key": self.api_key,
-            "q": query,
-            "type": "video",
-            "videoCategoryId": "10"  # ID da categoria de música
-        }
+                "part": "snippet",
+                "maxResults": 25,
+                "key": self.api_key,
+                "q": query,
+                "type": "video",
+                "videoCategoryId": "10",  # ID da categoria de música
+            }
             response = requests.get(base_url, params=params)
             results = response.json()
 
@@ -123,10 +170,17 @@ class YouTube:
                 for item in results.get("items", []):
                     if "id" in item and "videoId" in item["id"]:
                         video_title = item.get("snippet", {}).get("title")
-                        video_thumb = item.get("snippet", {}).get("thumbnails", {}).get("high", {}).get("url")
+                        video_thumb = (
+                            item.get("snippet", {})
+                            .get("thumbnails", {})
+                            .get("high", {})
+                            .get("url")
+                        )
                         video_url = item["id"]["videoId"]
                         video_author = item.get("snippet", {}).get("channelTitle")
-                        video = Result(video_title, video_thumb, video_url, video_author)
+                        video = Result(
+                            video_title, video_thumb, video_url, video_author
+                        )
                         videos.append(video)
                     else:
                         logging.warning(f"Skipping non-video item: {item}")
@@ -140,8 +194,8 @@ class YouTube:
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
             return []
-    
-    @cached(cache = LRUCache(maxsize = 100))
+
+    @cached(cache=LRUCache(maxsize=100))
     def get_videos(self, playlist_id: str) -> List[Music]:
         """
         Obtém os vídeos de uma playlist do YouTube.
@@ -177,7 +231,7 @@ class YouTube:
             logging.error(f"Error while downloading the video: {e}")
             return None
 
-    @cached(cache = LRUCache(maxsize = 15))
+    @cached(cache=LRUCache(maxsize=15))
     def get_playlist(self, query: str) -> List[Result]:
         """
         Obtém playlists do YouTube com base em uma query.
@@ -205,10 +259,17 @@ class YouTube:
                 for item in results.get("items", []):
                     if "id" in item and "playlistId" in item["id"]:
                         video_title = item.get("snippet", {}).get("title")
-                        video_thumb = item.get("snippet", {}).get("thumbnails", {}).get("high", {}).get("url")
+                        video_thumb = (
+                            item.get("snippet", {})
+                            .get("thumbnails", {})
+                            .get("high", {})
+                            .get("url")
+                        )
                         video_url = item["id"]["playlistId"]
                         video_author = item.get("snippet", {}).get("channelTitle")
-                        video = Result(video_title, video_thumb, video_url, video_author)
+                        video = Result(
+                            video_title, video_thumb, video_url, video_author
+                        )
                         videos.append(video)
                     else:
                         logging.warning(f"Skipping non-video item: {item}")
@@ -222,8 +283,8 @@ class YouTube:
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
             return []
-    
-    @cached(cache = LRUCache(maxsize = 100))
+
+    @cached(cache=LRUCache(maxsize=100))
     def stream(self, id: str) -> str:
         """
         Retorna a URL de streaming de áudio de um vídeo do YouTube.
