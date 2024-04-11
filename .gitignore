@@ -3,3 +3,4 @@
 venv
 .vercel
 **__pycache__
+**.sql
