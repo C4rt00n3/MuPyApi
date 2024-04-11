@@ -31,6 +31,7 @@ pycparser==2.21
 pycryptodomex==3.20.0
 PySocks==1.7.1
 python-dotenv==1.0.1
+pytube==15.0.0
 pytz==2023.3.post1
 requests==2.31.0
 selenium==4.15.2
@@ -40,12 +41,9 @@ sqlparse==0.4.4
 tqdm==4.66.1
 trio==0.23.1
 trio-websocket==0.11.1
-typing_extensions==4.8.0
 tzdata==2023.3
 urllib3==2.2.1
 wasabi==1.1.2
 websockets==12.0
 Werkzeug==3.0.1
 wsproto==1.2.0
-youtube-dl==2021.12.17
-yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz#sha256=b0a593f37e6882bd9e7dadc0217caa4bdb36c4b21a0d6c4ba70aa8a20e1a0a2e

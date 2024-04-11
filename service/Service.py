@@ -1,8 +1,7 @@
 import io
 from flask import jsonify, abort
-from YouTube.YouTube import YouTube
+from youtube import YouTube
 from flask.helpers import send_file
-from typing import Union
 
 
 class Service:
@@ -13,7 +12,7 @@ class Service:
     def __init__(self):
         self.yt_instance = YouTube()
 
-    async def download_file(self, id: Union[str, None]):
+    async def download_file(self, id: str):
         """
         Faz o download de um vídeo do YouTube e retorna o arquivo para download.
 
@@ -27,7 +26,7 @@ class Service:
             if id is None:
                 raise ValueError("Parâmetro 'id' não fornecido na string de consulta.")
 
-            video_bytes = self.yt_instance.download(video_id=id)
+            video_bytes = self.yt_instance.download(id)
 
             return send_file(
                 io.BytesIO(video_bytes),
@@ -38,7 +37,7 @@ class Service:
         except Exception as e:
             print(e)
             abort(400)
-
+    
     async def search(self, query: str):
         """
         Realiza uma busca no YouTube com base em uma consulta e retorna os resultados.
