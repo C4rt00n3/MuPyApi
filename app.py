@@ -1,7 +1,7 @@
 import asyncio
 from flask_cors import CORS
 from flask import Flask, request
-from service import Service
+from service.service import Service
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
